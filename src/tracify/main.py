@@ -342,8 +342,8 @@ class TracifyApp:
             self.progress.start()
         else:
             self.load_btn.config(state="normal")
-            self.apply_btn.config(state="normal" if self.original_image else "disabled")
-            self.save_btn.config(state="normal" if self.processed_image else "disabled")
+            self.apply_btn.config(state="normal" if self.original_image is not None else "disabled")
+            self.save_btn.config(state="normal" if self.processed_image is not None else "disabled")
             self.progress.stop()
             self.progress.grid_remove()
 

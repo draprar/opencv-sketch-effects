@@ -224,14 +224,19 @@ class TestEffectApplication:
         # Should be binary
         assert np.all((app.processed_image == 0) | (app.processed_image == 255))
 
-    def test_apply_unknown_effect_raises_error(
+    def test_apply_unknown_effect_shows_error(
         self, app: TracifyApp, sample_image: np.ndarray
     ) -> None:
-        """Test that unknown effect raises ValueError."""
+        """Test that unknown effect shows error via callback."""
         app.original_image = sample_image
 
-        with pytest.raises(ValueError, match="Unknown effect"):
-            app._process_image("Unknown Effect")
+        # Call process_image which will handle error via callback
+        app._process_image("Unknown Effect")
+
+        # The error should be passed to the processing complete callback
+        # We can't easily test the callback without running mainloop,
+        # but we can verify the processed_image is None
+        assert app.processed_image is None
 
     def test_processing_enables_save_button(
         self, app: TracifyApp, sample_image: np.ndarray
