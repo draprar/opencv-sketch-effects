@@ -23,9 +23,7 @@ class ImageTooLargeError(ValueError):
     """Raised when an image exceeds maximum allowed dimensions."""
 
 
-def validate_image(
-    image: Any, max_dimension: int = 4096
-) -> None:
+def validate_image(image: Any, max_dimension: int = 4096) -> None:
     """Validate that an image meets requirements for processing.
 
     Args:
@@ -46,9 +44,7 @@ def validate_image(
         raise InvalidImageError(f"Image must be 2D or 3D, got {image.ndim}D")
 
     if image.ndim == 3 and image.shape[2] not in [1, 3]:
-        raise InvalidImageError(
-            f"Image must have 1 or 3 channels, got {image.shape[2]} channels"
-        )
+        raise InvalidImageError(f"Image must have 1 or 3 channels, got {image.shape[2]} channels")
 
     if image.dtype != np.uint8:
         raise InvalidImageError(f"Image must be uint8, got {image.dtype}")
@@ -148,8 +144,6 @@ def apply_tattoo_calc_effect(image: np.ndarray) -> np.ndarray:
 
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     # Use Otsu's thresholding for better adaptive results
-    _, binary_image = cv2.threshold(
-        gray_image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU
-    )
+    _, binary_image = cv2.threshold(gray_image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
     return binary_image

@@ -145,9 +145,7 @@ class TestFullWorkflow:
         success = cv2.imwrite(str(save_path), app.processed_image)
         assert success
 
-    def test_sequential_effects(
-        self, app: TracifyApp, temp_image_file: Path
-    ) -> None:
+    def test_sequential_effects(self, app: TracifyApp, temp_image_file: Path) -> None:
         """Test applying multiple effects sequentially."""
         image = cv2.imread(str(temp_image_file))
         app.original_image = image
@@ -161,9 +159,7 @@ class TestFullWorkflow:
             # Each effect should produce valid output
             assert app.processed_image.size > 0
 
-    def test_reload_and_reprocess(
-        self, app: TracifyApp, temp_image_file: Path
-    ) -> None:
+    def test_reload_and_reprocess(self, app: TracifyApp, temp_image_file: Path) -> None:
         """Test loading, processing, then loading again."""
         # First load and process
         image = cv2.imread(str(temp_image_file))

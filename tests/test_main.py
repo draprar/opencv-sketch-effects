@@ -173,9 +173,7 @@ class TestEffectApplication:
         app._apply_effect()
         assert app.processed_image is None
 
-    def test_apply_grayscale_effect(
-        self, app: TracifyApp, sample_image: np.ndarray
-    ) -> None:
+    def test_apply_grayscale_effect(self, app: TracifyApp, sample_image: np.ndarray) -> None:
         """Test applying grayscale effect."""
         app.original_image = sample_image
         app.effect_var.set("Grayscale")
@@ -186,9 +184,7 @@ class TestEffectApplication:
         assert app.processed_image is not None
         assert app.processed_image.shape == (100, 100)
 
-    def test_apply_sketch_effect(
-        self, app: TracifyApp, sample_image: np.ndarray
-    ) -> None:
+    def test_apply_sketch_effect(self, app: TracifyApp, sample_image: np.ndarray) -> None:
         """Test applying sketch effect."""
         app.original_image = sample_image
         app.effect_var.set("Sketch Effect")
@@ -198,9 +194,7 @@ class TestEffectApplication:
         assert app.processed_image is not None
         assert app.processed_image.shape == (100, 100)
 
-    def test_apply_contour_effect(
-        self, app: TracifyApp, sample_image: np.ndarray
-    ) -> None:
+    def test_apply_contour_effect(self, app: TracifyApp, sample_image: np.ndarray) -> None:
         """Test applying contour effect."""
         app.original_image = sample_image
         app.effect_var.set("Contour Effect")
@@ -210,9 +204,7 @@ class TestEffectApplication:
         assert app.processed_image is not None
         assert app.processed_image.shape == (100, 100)
 
-    def test_apply_tattoo_effect(
-        self, app: TracifyApp, sample_image: np.ndarray
-    ) -> None:
+    def test_apply_tattoo_effect(self, app: TracifyApp, sample_image: np.ndarray) -> None:
         """Test applying tattoo calc effect."""
         app.original_image = sample_image
         app.effect_var.set("Tattoo Calc Effect")
@@ -329,17 +321,13 @@ class TestImageSaving:
 class TestDisplayImage:
     """Tests for image display functionality."""
 
-    def test_display_grayscale_image(
-        self, app: TracifyApp, sample_image: np.ndarray
-    ) -> None:
+    def test_display_grayscale_image(self, app: TracifyApp, sample_image: np.ndarray) -> None:
         """Test displaying a grayscale image."""
         gray = cv2.cvtColor(sample_image, cv2.COLOR_BGR2GRAY)
         app._display_image(gray)
         # Just ensure no errors occur
 
-    def test_display_color_image(
-        self, app: TracifyApp, sample_image: np.ndarray
-    ) -> None:
+    def test_display_color_image(self, app: TracifyApp, sample_image: np.ndarray) -> None:
         """Test displaying a color image."""
         app._display_image(sample_image)
         # Just ensure no errors occur
@@ -388,9 +376,7 @@ class TestEdgeCases:
         assert app.processed_image is not None
         assert app.processed_image.shape == (1, 1)
 
-    def test_suggested_filename_with_original(
-        self, app: TracifyApp, tmp_path: Path
-    ) -> None:
+    def test_suggested_filename_with_original(self, app: TracifyApp, tmp_path: Path) -> None:
         """Test that suggested filename is based on original."""
         app.current_file_path = tmp_path / "test.png"
         app.processed_image = np.zeros((100, 100), dtype=np.uint8)

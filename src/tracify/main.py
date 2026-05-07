@@ -60,9 +60,7 @@ class TracifyApp:
         self._create_image_display(main_frame)
 
         # Progress bar (initially hidden)
-        self.progress = ttk.Progressbar(
-            main_frame, mode="indeterminate", bootstyle="info"
-        )
+        self.progress = ttk.Progressbar(main_frame, mode="indeterminate", bootstyle="info")
         self.progress.grid(row=2, column=0, sticky=(E, W), pady=(10, 0))
         self.progress.grid_remove()  # Hide initially
 
@@ -155,12 +153,12 @@ class TracifyApp:
 
         try:
             # Validate file extension before loading
-            ALLOWED_EXTENSIONS = {".png", ".jpg", ".jpeg", ".bmp", ".tiff", ".tif"}
+            allowed_extensions = {".png", ".jpg", ".jpeg", ".bmp", ".tiff", ".tif"}
             file_ext = Path(file_path).suffix.lower()
-            if file_ext not in ALLOWED_EXTENSIONS:
+            if file_ext not in allowed_extensions:
                 raise InvalidImageError(
                     f"Unsupported file format: {file_ext}\n"
-                    f"Allowed formats: {', '.join(sorted(ALLOWED_EXTENSIONS))}"
+                    f"Allowed formats: {', '.join(sorted(allowed_extensions))}"
                 )
 
             # Load image using OpenCV
@@ -243,9 +241,7 @@ class TracifyApp:
             # Report error in main thread
             self.root.after(0, self._on_processing_complete, None, e)
 
-    def _on_processing_complete(
-        self, result: np.ndarray | None, error: Exception | None
-    ) -> None:
+    def _on_processing_complete(self, result: np.ndarray | None, error: Exception | None) -> None:
         """Handle completion of image processing.
 
         Args:
@@ -255,9 +251,7 @@ class TracifyApp:
         self._set_processing(False)
 
         if error:
-            messagebox.showerror(
-                "Processing Error", f"Failed to apply effect: {str(error)}"
-            )
+            messagebox.showerror("Processing Error", f"Failed to apply effect: {str(error)}")
             return
 
         if result is not None:
@@ -272,9 +266,7 @@ class TracifyApp:
         # Suggest filename based on original
         initial_file = "processed_image.png"
         if self.current_file_path:
-            initial_file = (
-                f"{self.current_file_path.stem}_processed{self.current_file_path.suffix}"
-            )
+            initial_file = f"{self.current_file_path.stem}_processed{self.current_file_path.suffix}"
 
         save_path = filedialog.asksaveasfilename(
             title="Save Processed Image",
