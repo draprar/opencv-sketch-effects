@@ -36,11 +36,16 @@ jobs:
         run: |
           uv sync --all-groups
 
-      - name: Install xvfb (Linux only)
+      - name: Install system dependencies (Linux)
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y xvfb libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libxcb-xfixes0
+          sudo apt-get install -y xvfb libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libxcb-xfixes0 python3-tk
+
+      - name: Install system dependencies (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew install python-tk@${{ matrix.python-version }}
 
       - name: Run ruff linter
         run: |
@@ -81,6 +86,7 @@ jobs:
         with:
           file: ./coverage.xml
           fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}  # Optional but recommended
 
   security-audit:
     name: Dependency Security Audit
@@ -106,4 +112,4 @@ jobs:
         run: |
           uv pip install pip-audit
           uv run pip-audit --desc
-        continue-on-error: true
+        continue-on-error: false

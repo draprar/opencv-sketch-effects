@@ -348,12 +348,12 @@ class TracifyApp:
             self.progress.grid_remove()
 
 
-def main() -> None:
+def main() -> None:  # pragma: no cover
     """Main entry point for the Tracify application."""
     root = ttk.Window(themename="darkly")
     TracifyApp(root)
     root.mainloop()
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     main()
