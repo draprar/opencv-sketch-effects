@@ -10,6 +10,7 @@ import ttkbootstrap as ttk
 from PIL import Image, ImageTk
 from ttkbootstrap.constants import CENTER, E, N, S, W
 
+from .config import Config
 from .image_processor import (
     ImageTooLargeError,
     InvalidImageError,
@@ -39,8 +40,22 @@ class TracifyApp:
         self.current_file_path: Path | None = None
         self.processing = False
 
+        # Configuration
+        self.config = Config()
+
+        # Parameter variables
+        self.blur_kernel_var = ttk.IntVar(value=21)
+        self.scale_var = ttk.IntVar(value=256)
+        self.threshold1_var = ttk.IntVar(value=50)
+        self.threshold2_var = ttk.IntVar(value=150)
+        self.tattoo_threshold_var = ttk.IntVar(value=127)
+        self.use_otsu_var = ttk.BooleanVar(value=True)
+
         # UI Components
         self._init_ui()
+
+        # Load saved parameters
+        self._load_parameters()
 
     def _init_ui(self) -> None:
         """Set up the user interface components."""
@@ -51,17 +66,20 @@ class TracifyApp:
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(0, weight=1)
         main_frame.columnconfigure(0, weight=1)
-        main_frame.rowconfigure(1, weight=1)
+        main_frame.rowconfigure(2, weight=1)
 
         # Control panel at top
         self._create_control_panel(main_frame)
+
+        # Parameter panel (collapsible)
+        self._create_parameter_panel(main_frame)
 
         # Image display area
         self._create_image_display(main_frame)
 
         # Progress bar (initially hidden)
         self.progress = ttk.Progressbar(main_frame, mode="indeterminate", bootstyle="info")
-        self.progress.grid(row=2, column=0, sticky=(E, W), pady=(10, 0))
+        self.progress.grid(row=3, column=0, sticky=(E, W), pady=(10, 0))
         self.progress.grid_remove()  # Hide initially
 
     def _create_control_panel(self, parent: ttk.Frame) -> None:
@@ -99,6 +117,7 @@ class TracifyApp:
             width=20,
         )
         self.effect_combo.grid(row=0, column=2, padx=5)
+        self.effect_combo.bind("<<ComboboxSelected>>", self._on_effect_changed)
 
         # Apply button
         self.apply_btn = ttk.Button(
@@ -122,6 +141,165 @@ class TracifyApp:
         )
         self.save_btn.grid(row=0, column=4, padx=5)
 
+    def _create_parameter_panel(self, parent: ttk.Frame) -> None:
+        """Create the parameter adjustment panel with all effect parameters.
+
+        Args:
+            parent: The parent frame to add the panel to.
+        """
+        self.param_frame = ttk.Labelframe(parent, text="Effect Parameters")
+        self.param_frame.grid(row=1, column=0, sticky=(E, W), pady=(0, 10))
+
+        # Sketch Effect Parameters
+        sketch_frame = ttk.Frame(self.param_frame, padding=10)
+        sketch_frame.grid(row=0, column=0, sticky=(E, W), padx=5, pady=5)
+        sketch_frame.columnconfigure(1, weight=1)
+
+        sketch_title = ttk.Label(
+            sketch_frame, text="Sketch Effect", font=("TkDefaultFont", 10, "bold")
+        )
+        sketch_title.grid(row=0, column=0, columnspan=3, pady=(0, 5))
+
+        ttk.Label(sketch_frame, text="Blur Kernel:").grid(row=1, column=0, padx=5, pady=2, sticky=W)
+        blur_slider = ttk.Scale(
+            sketch_frame,
+            from_=1,
+            to=99,
+            variable=self.blur_kernel_var,
+            orient="horizontal",
+            command=lambda _: self._update_blur_label(),
+        )
+        blur_slider.grid(row=1, column=1, padx=5, pady=2, sticky=(E, W))
+        self.blur_label = ttk.Label(sketch_frame, text="21")
+        self.blur_label.grid(row=1, column=2, padx=5, pady=2)
+
+        ttk.Label(sketch_frame, text="Scale:").grid(row=2, column=0, padx=5, pady=2, sticky=W)
+        scale_slider = ttk.Scale(
+            sketch_frame,
+            from_=1,
+            to=512,
+            variable=self.scale_var,
+            orient="horizontal",
+            command=lambda _: self._update_scale_label(),
+        )
+        scale_slider.grid(row=2, column=1, padx=5, pady=2, sticky=(E, W))
+        self.scale_label = ttk.Label(sketch_frame, text="256")
+        self.scale_label.grid(row=2, column=2, padx=5, pady=2)
+
+        # Contour Effect Parameters
+        contour_frame = ttk.Frame(self.param_frame, padding=10)
+        contour_frame.grid(row=1, column=0, sticky=(E, W), padx=5, pady=5)
+        contour_frame.columnconfigure(1, weight=1)
+
+        contour_title = ttk.Label(
+            contour_frame, text="Contour Effect", font=("TkDefaultFont", 10, "bold")
+        )
+        contour_title.grid(row=0, column=0, columnspan=3, pady=(0, 5))
+
+        ttk.Label(contour_frame, text="Threshold 1:").grid(
+            row=1, column=0, padx=5, pady=2, sticky=W
+        )
+        thresh1_slider = ttk.Scale(
+            contour_frame,
+            from_=1,
+            to=500,
+            variable=self.threshold1_var,
+            orient="horizontal",
+            command=lambda _: self._update_threshold1_label(),
+        )
+        thresh1_slider.grid(row=1, column=1, padx=5, pady=2, sticky=(E, W))
+        self.threshold1_label = ttk.Label(contour_frame, text="50")
+        self.threshold1_label.grid(row=1, column=2, padx=5, pady=2)
+
+        ttk.Label(contour_frame, text="Threshold 2:").grid(
+            row=2, column=0, padx=5, pady=2, sticky=W
+        )
+        thresh2_slider = ttk.Scale(
+            contour_frame,
+            from_=1,
+            to=500,
+            variable=self.threshold2_var,
+            orient="horizontal",
+            command=lambda _: self._update_threshold2_label(),
+        )
+        thresh2_slider.grid(row=2, column=1, padx=5, pady=2, sticky=(E, W))
+        self.threshold2_label = ttk.Label(contour_frame, text="150")
+        self.threshold2_label.grid(row=2, column=2, padx=5, pady=2)
+
+        # Tattoo Effect Parameters
+        tattoo_frame = ttk.Frame(self.param_frame, padding=10)
+        tattoo_frame.grid(row=2, column=0, sticky=(E, W), padx=5, pady=5)
+        tattoo_frame.columnconfigure(1, weight=1)
+
+        tattoo_title = ttk.Label(
+            tattoo_frame, text="Tattoo Calc Effect", font=("TkDefaultFont", 10, "bold")
+        )
+        tattoo_title.grid(row=0, column=0, columnspan=3, pady=(0, 5))
+
+        use_otsu_check = ttk.Checkbutton(
+            tattoo_frame,
+            text="Use Otsu Auto-Threshold",
+            variable=self.use_otsu_var,
+            command=self._on_otsu_toggle,
+        )
+        use_otsu_check.grid(row=1, column=0, columnspan=3, padx=5, pady=2, sticky=W)
+
+        ttk.Label(tattoo_frame, text="Manual Threshold:").grid(
+            row=2, column=0, padx=5, pady=2, sticky=W
+        )
+        self.tattoo_slider = ttk.Scale(
+            tattoo_frame,
+            from_=0,
+            to=255,
+            variable=self.tattoo_threshold_var,
+            orient="horizontal",
+            command=lambda _: self._update_tattoo_threshold_label(),
+            state="disabled",
+        )
+        self.tattoo_slider.grid(row=2, column=1, padx=5, pady=2, sticky=(E, W))
+        self.tattoo_threshold_label = ttk.Label(tattoo_frame, text="127")
+        self.tattoo_threshold_label.grid(row=2, column=2, padx=5, pady=2)
+
+    def _on_effect_changed(self, event: object = None) -> None:
+        """Handle effect selection change.
+
+        Args:
+            event: The event object (unused).
+        """
+        # All parameter panels are now always visible
+        pass
+
+    def _on_otsu_toggle(self) -> None:
+        """Handle Otsu checkbox toggle."""
+        if self.use_otsu_var.get():
+            self.tattoo_slider.config(state="disabled")
+        else:
+            self.tattoo_slider.config(state="normal")
+
+    def _update_blur_label(self) -> None:
+        """Update blur kernel label."""
+        value = self.blur_kernel_var.get()
+        # Ensure odd
+        if value % 2 == 0:
+            value += 1
+        self.blur_label.config(text=str(value))
+
+    def _update_scale_label(self) -> None:
+        """Update scale label."""
+        self.scale_label.config(text=str(self.scale_var.get()))
+
+    def _update_threshold1_label(self) -> None:
+        """Update threshold1 label."""
+        self.threshold1_label.config(text=str(self.threshold1_var.get()))
+
+    def _update_threshold2_label(self) -> None:
+        """Update threshold2 label."""
+        self.threshold2_label.config(text=str(self.threshold2_var.get()))
+
+    def _update_tattoo_threshold_label(self) -> None:
+        """Update tattoo threshold label."""
+        self.tattoo_threshold_label.config(text=str(self.tattoo_threshold_var.get()))
+
     def _create_image_display(self, parent: ttk.Frame) -> None:
         """Create the image display area.
 
@@ -129,7 +307,7 @@ class TracifyApp:
             parent: The parent frame to add display to.
         """
         display_frame = ttk.Labelframe(parent, text="Image Preview")
-        display_frame.grid(row=1, column=0, sticky=(N, S, E, W), padx=10, pady=10)
+        display_frame.grid(row=2, column=0, sticky=(N, S, E, W), padx=10, pady=10)
         display_frame.columnconfigure(0, weight=1)
         display_frame.rowconfigure(0, weight=1)
 
@@ -220,19 +398,32 @@ class TracifyApp:
             if self.original_image is None:
                 raise ValueError("No image loaded")
 
-            # Apply the selected effect
+            # Apply the selected effect with parameters
             if effect == "Grayscale":
                 result = convert_to_grayscale(self.original_image)
             elif effect == "Sketch Effect":
-                result = apply_sketch_effect(self.original_image)
+                blur_kernel = self.blur_kernel_var.get()
+                scale = self.scale_var.get()
+                result = apply_sketch_effect(self.original_image, blur_kernel, scale)
             elif effect == "Contour Effect":
-                result = apply_contour_effect(self.original_image)
+                threshold1 = self.threshold1_var.get()
+                threshold2 = self.threshold2_var.get()
+                # Ensure threshold2 > threshold1
+                if threshold2 <= threshold1:
+                    threshold2 = threshold1 + 1
+                    self.root.after(0, lambda: self.threshold2_var.set(threshold2))
+                result = apply_contour_effect(self.original_image, threshold1, threshold2)
             elif effect == "Tattoo Calc Effect":
-                result = apply_tattoo_calc_effect(self.original_image)
+                threshold_value = self.tattoo_threshold_var.get()
+                use_otsu = self.use_otsu_var.get()
+                result = apply_tattoo_calc_effect(self.original_image, threshold_value, use_otsu)
             else:
                 raise ValueError(f"Unknown effect: {effect}")
 
             self.processed_image = result
+
+            # Save parameters to config
+            self._save_parameters()
 
             # Update UI in main thread
             self.root.after(0, self._on_processing_complete, result, None)
@@ -317,6 +508,66 @@ class TracifyApp:
         # Update label
         self.image_label.configure(image=photo, text="")
         self.image_label.image = photo  # type: ignore[attr-defined]  # Keep reference to prevent GC
+
+    def _load_parameters(self) -> None:
+        """Load effect parameters from configuration."""
+        # Load sketch parameters
+        sketch_params = self.config.get_effect_params("sketch")
+        if sketch_params:
+            self.blur_kernel_var.set(sketch_params.get("blur_kernel", 21))
+            self.scale_var.set(sketch_params.get("scale", 256))
+
+        # Load contour parameters
+        contour_params = self.config.get_effect_params("contour")
+        if contour_params:
+            self.threshold1_var.set(contour_params.get("threshold1", 50))
+            self.threshold2_var.set(contour_params.get("threshold2", 150))
+
+        # Load tattoo parameters
+        tattoo_params = self.config.get_effect_params("tattoo")
+        if tattoo_params:
+            threshold_type = tattoo_params.get("threshold_type", "otsu")
+            self.use_otsu_var.set(threshold_type == "otsu")
+            self.tattoo_threshold_var.set(tattoo_params.get("threshold_value", 127))
+
+        # Update labels
+        self._update_blur_label()
+        self._update_scale_label()
+        self._update_threshold1_label()
+        self._update_threshold2_label()
+        self._update_tattoo_threshold_label()
+
+    def _save_parameters(self) -> None:
+        """Save current effect parameters to configuration."""
+        # Save sketch parameters
+        self.config.set_effect_params(
+            "sketch",
+            {
+                "blur_kernel": self.blur_kernel_var.get(),
+                "scale": self.scale_var.get(),
+            },
+        )
+
+        # Save contour parameters
+        self.config.set_effect_params(
+            "contour",
+            {
+                "threshold1": self.threshold1_var.get(),
+                "threshold2": self.threshold2_var.get(),
+            },
+        )
+
+        # Save tattoo parameters
+        self.config.set_effect_params(
+            "tattoo",
+            {
+                "threshold_type": "otsu" if self.use_otsu_var.get() else "manual",
+                "threshold_value": self.tattoo_threshold_var.get(),
+            },
+        )
+
+        # Persist to disk
+        self.config.save()
 
     def _set_processing(self, processing: bool) -> None:
         """Enable or disable UI elements during processing.

@@ -78,7 +78,7 @@ def convert_to_grayscale(image: np.ndarray) -> np.ndarray:
     return cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
 
-def apply_sketch_effect(image: np.ndarray) -> np.ndarray:
+def apply_sketch_effect(image: np.ndarray, blur_kernel: int = 21, scale: int = 256) -> np.ndarray:
     """Convert an image into a sketch-like representation.
 
     Uses Gaussian blur and division to create a pencil sketch effect.
@@ -86,64 +86,106 @@ def apply_sketch_effect(image: np.ndarray) -> np.ndarray:
 
     Args:
         image: Input image in BGR format.
+        blur_kernel: Size of Gaussian blur kernel (must be odd, 1-99). Default 21.
+        scale: Division scale factor (1-512). Default 256.
 
     Returns:
         Sketch-like grayscale image.
 
     Raises:
         InvalidImageError: If image is invalid.
+        ValueError: If parameters are out of valid range.
     """
     validate_image(image)
 
+    # Validate parameters
+    if blur_kernel < 1 or blur_kernel > 99:
+        raise ValueError(f"blur_kernel must be between 1 and 99, got {blur_kernel}")
+    if scale < 1 or scale > 512:
+        raise ValueError(f"scale must be between 1 and 512, got {scale}")
+
+    # Ensure blur_kernel is odd
+    if blur_kernel % 2 == 0:
+        blur_kernel += 1
+
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     inverted_image = cv2.bitwise_not(gray_image)
-    blurred_image = cv2.GaussianBlur(inverted_image, (21, 21), 0)
+    blurred_image = cv2.GaussianBlur(inverted_image, (blur_kernel, blur_kernel), 0)
 
     # Prevent division by zero by clamping minimum value to 1
     denominator = np.maximum(255 - blurred_image, 1)
-    sketch_image = cv2.divide(gray_image, denominator, scale=256)
+    sketch_image = cv2.divide(gray_image, denominator, scale=scale)
 
     return sketch_image
 
 
-def apply_contour_effect(image: np.ndarray) -> np.ndarray:
+def apply_contour_effect(
+    image: np.ndarray, threshold1: int = 50, threshold2: int = 150
+) -> np.ndarray:
     """Extract contours from an image using Canny edge detection.
 
     Args:
         image: Input image in BGR format.
+        threshold1: First threshold for hysteresis (1-500). Default 50.
+        threshold2: Second threshold for hysteresis (1-500). Default 150.
 
     Returns:
         Binary edge map showing detected contours.
 
     Raises:
         InvalidImageError: If image is invalid.
+        ValueError: If parameters are out of valid range.
     """
     validate_image(image)
 
+    # Validate parameters
+    if threshold1 < 1 or threshold1 > 500:
+        raise ValueError(f"threshold1 must be between 1 and 500, got {threshold1}")
+    if threshold2 < 1 or threshold2 > 500:
+        raise ValueError(f"threshold2 must be between 1 and 500, got {threshold2}")
+    if threshold2 <= threshold1:
+        raise ValueError(
+            f"threshold2 ({threshold2}) must be greater than threshold1 ({threshold1})"
+        )
+
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    edges = cv2.Canny(gray_image, 50, 150)
+    edges = cv2.Canny(gray_image, threshold1, threshold2)
 
     return edges
 
 
-def apply_tattoo_calc_effect(image: np.ndarray) -> np.ndarray:
+def apply_tattoo_calc_effect(
+    image: np.ndarray, threshold_value: int = 127, use_otsu: bool = True
+) -> np.ndarray:
     """Generate a high-contrast binary image suitable for tattoo templates.
 
-    Uses Otsu's method for adaptive thresholding to handle various lighting conditions.
+    Uses Otsu's method for adaptive thresholding or manual threshold.
 
     Args:
         image: Input image in BGR format.
+        threshold_value: Manual threshold value (0-255). Default 127. Ignored if use_otsu=True.
+        use_otsu: Whether to use Otsu's automatic thresholding. Default True.
 
     Returns:
         Binary image (only values 0 or 255).
 
     Raises:
         InvalidImageError: If image is invalid.
+        ValueError: If parameters are out of valid range.
     """
     validate_image(image)
 
+    # Validate parameters
+    if threshold_value < 0 or threshold_value > 255:
+        raise ValueError(f"threshold_value must be between 0 and 255, got {threshold_value}")
+
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    # Use Otsu's thresholding for better adaptive results
-    _, binary_image = cv2.threshold(gray_image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+    if use_otsu:
+        # Use Otsu's thresholding for better adaptive results
+        _, binary_image = cv2.threshold(gray_image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    else:
+        # Use manual threshold
+        _, binary_image = cv2.threshold(gray_image, threshold_value, 255, cv2.THRESH_BINARY)
 
     return binary_image

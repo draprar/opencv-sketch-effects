@@ -98,6 +98,9 @@ addopts = [
     "--cov-report=term-missing",
     "--cov-report=html",
 ]
+markers = [
+    "gui: marks tests that require GUI/tkinter (deselect with '-m \"not gui\"')",
+]
 
 [tool.bandit]
 exclude_dirs = ["tests", ".venv"]
