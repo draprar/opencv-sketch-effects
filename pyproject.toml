@@ -97,6 +97,8 @@ addopts = [
     "--cov=src/tracify",
     "--cov-report=term-missing",
     "--cov-report=html",
+    "-m",
+    "not gui",
 ]
 markers = [
     "gui: marks tests that require GUI/tkinter (deselect with '-m \"not gui\"')",
