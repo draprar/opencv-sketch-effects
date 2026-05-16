@@ -1,12 +1,15 @@
 """Configuration management for Tracify application."""
 
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
+# Prefer the stdlib name first so type checkers (mypy) resolve the stdlib
+# `tomllib` on Python >= 3.11. If it's not available (older Python), fall
+# back to the third-party `tomli` package which provides a compatible API.
 try:
-    import tomli as tomllib  # Python < 3.11
-except ImportError:
-    import tomllib  # Python >= 3.11
+    import tomllib
+except Exception:  # ImportError on older Pythons
+    import tomli as tomllib  # type: ignore
 
 import tomli_w
 
@@ -54,7 +57,8 @@ class Config:
         if self.config_path.exists():
             try:
                 with open(self.config_path, "rb") as f:
-                    return tomllib.load(f)
+                    data = tomllib.load(f)
+                    return cast(dict[str, Any], data)
             except Exception:
                 # If config is corrupted, use defaults
                 return self.DEFAULT_CONFIG.copy()
@@ -99,7 +103,9 @@ class Config:
         Returns:
             Dictionary of effect parameters.
         """
-        return self.config.get("effects", {}).get(effect, {})
+        # The nested `.get()` usage can yield Any; cast to the expected
+        # mapping shape so mypy accepts the declared return type.
+        return cast(dict[str, Any], self.config.get("effects", {}).get(effect, {}))
 
     def set_effect_params(self, effect: str, params: dict[str, Any]) -> None:
         """Set parameters for specific effect.
