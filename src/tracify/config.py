@@ -58,7 +58,7 @@ class Config:
             try:
                 with open(self.config_path, "rb") as f:
                     data = tomllib.load(f)
-                    return cast(dict[str, Any], data)
+                    return data
             except Exception:
                 # If config is corrupted, use defaults
                 return self.DEFAULT_CONFIG.copy()
