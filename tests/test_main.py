@@ -42,9 +42,11 @@ def temp_image_file(sample_image: np.ndarray, tmp_path: Path) -> Path:
     return file_path
 
 
+@pytest.mark.gui
 class TestTracifyAppInitialization:
     """Tests for application initialization."""
 
+    @pytest.mark.gui
     def test_app_initializes(self, app: TracifyApp) -> None:
         """Test that app initializes without errors."""
         assert app.original_image is None
@@ -68,6 +70,7 @@ class TestTracifyAppInitialization:
         assert str(app.save_btn.cget("state")) == "disabled"
 
 
+@pytest.mark.gui
 class TestImageLoading:
     """Tests for image loading functionality."""
 
@@ -165,6 +168,7 @@ class TestImageLoading:
         assert "Unsupported file format" in str(mock_error.call_args)
 
 
+@pytest.mark.gui
 class TestEffectApplication:
     """Tests for applying effects."""
 
@@ -252,6 +256,7 @@ class TestEffectApplication:
             assert "Processing Error" in str(mock_error.call_args)
 
 
+@pytest.mark.gui
 class TestImageSaving:
     """Tests for saving processed images."""
 
@@ -318,6 +323,7 @@ class TestImageSaving:
         assert "Save Error" in str(mock_error.call_args)
 
 
+@pytest.mark.gui
 class TestDisplayImage:
     """Tests for image display functionality."""
 
@@ -339,6 +345,7 @@ class TestDisplayImage:
         # Image should be displayed without error
 
 
+@pytest.mark.gui
 class TestProcessingState:
     """Tests for processing state management."""
 
@@ -364,6 +371,7 @@ class TestProcessingState:
         assert app.processing is False
 
 
+@pytest.mark.gui
 class TestEdgeCases:
     """Edge case tests for the application."""
 

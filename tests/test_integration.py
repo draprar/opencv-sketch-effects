@@ -49,6 +49,7 @@ def temp_image_file(sample_image: np.ndarray, tmp_path: Path) -> Path:
     return file_path
 
 
+@pytest.mark.gui
 class TestFullWorkflow:
     """Test complete workflows from load to save."""
 
@@ -217,6 +218,7 @@ class TestFullWorkflow:
             assert success
 
 
+@pytest.mark.gui
 class TestEdgeCaseWorkflows:
     """Test edge cases in full workflows."""
 
